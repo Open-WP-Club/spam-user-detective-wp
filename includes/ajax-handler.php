@@ -50,6 +50,8 @@ class SpamDetective_AjaxHandler
     add_action('wp_ajax_import_domain_lists', [$this, 'handle_import_domain_lists']);
     add_action('wp_ajax_get_domain_list', [$this, 'handle_get_domain_list']);
     add_action('wp_ajax_clear_spam_cache', [$this, 'handle_clear_spam_cache']);
+    // NEW v1.4.0: Detection settings handler
+    add_action('wp_ajax_save_detection_settings', [$this, 'handle_save_detection_settings']);
   }
 
   /**
@@ -434,5 +436,44 @@ class SpamDetective_AjaxHandler
 
     // If same risk level, sort by registration date (newest first)
     return strcmp($b['registered'], $a['registered']);
+  }
+
+  /**
+   * Handle save detection settings request (NEW v1.4.0)
+   */
+  public function handle_save_detection_settings()
+  {
+    $this->verify_nonce_and_capability('manage_options');
+
+    $current_settings = get_option('spam_detective_settings', []);
+
+    // Update detection method settings
+    $detection_settings = [
+      'enable_disposable_check' => !empty($_POST['enable_disposable']),
+      'enable_entropy_check' => !empty($_POST['enable_entropy']),
+      'enable_homoglyph_check' => !empty($_POST['enable_homoglyph']),
+      'enable_similarity_check' => !empty($_POST['enable_similarity']),
+      'track_registration_ip' => !empty($_POST['track_registration_ip']),
+      'enable_external_checks' => !empty($_POST['enable_external']),
+      'enable_stopforumspam' => !empty($_POST['enable_stopforumspam']),
+      'enable_mx_check' => !empty($_POST['enable_mx_check']),
+      'enable_gravatar_check' => !empty($_POST['enable_gravatar']),
+    ];
+
+    $updated_settings = array_merge($current_settings, $detection_settings);
+    update_option('spam_detective_settings', $updated_settings);
+
+    // Clear cache when settings change
+    if ($this->cache_manager) {
+      $this->cache_manager->clear_all_user_cache();
+    }
+
+    error_log('Spam Detective: Detection settings updated - ' . json_encode($detection_settings));
+
+    wp_send_json_success([
+      'message' => 'Detection settings saved successfully',
+      'settings' => $detection_settings,
+      'cache_cleared' => true
+    ]);
   }
 }

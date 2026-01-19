@@ -24,19 +24,28 @@ require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/woocommerce-integration.php';
 // 3. Load Domain Manager (depends on Cache Manager)
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/domain-manager.php';
 
-// 4. Load User Analyzer (core analysis logic, no dependencies)
+// 4. Load Disposable Email Checker (no dependencies) - NEW in 1.4.0
+require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/disposable-email-checker.php';
+
+// 5. Load External Checks - StopForumSpam, MX, Gravatar (no dependencies) - NEW in 1.4.0
+require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/external-checks.php';
+
+// 6. Load Advanced Analysis - Entropy, Homoglyphs, IP velocity (no dependencies) - NEW in 1.4.0
+require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/advanced-analysis.php';
+
+// 7. Load User Analyzer (core analysis logic, uses new analysis classes)
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/user-analyzer.php';
 
-// 5. Load User Manager (depends on WooCommerce Integration and Cache Manager)
+// 8. Load User Manager (depends on WooCommerce Integration and Cache Manager)
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/user-manager.php';
 
-// 6. Load Export/Import (depends on User Manager, User Analyzer, and Domain Manager)
+// 9. Load Export/Import (depends on User Manager, User Analyzer, and Domain Manager)
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/export-import.php';
 
-// 7. Load AJAX Handler (depends on all other components)
+// 10. Load AJAX Handler (depends on all other components)
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/ajax-handler.php';
 
-// 8. Load main Analyzer class (orchestrates all components)
+// 11. Load main Analyzer class (orchestrates all components)
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/spam-analyzer.php';
 
 // Log successful loading for debugging

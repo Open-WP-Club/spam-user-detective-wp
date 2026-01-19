@@ -154,6 +154,7 @@ class SpamDetective_AdminInterface
 
   private function display_settings()
   {
+    $settings = get_option('spam_detective_settings', []);
   ?>
     <div class="spam-detective-card">
       <h2>Settings</h2>
@@ -202,6 +203,94 @@ class SpamDetective_AdminInterface
           <input type="text" id="new-suspicious-domain" placeholder="Enter domain (e.g., spam-domain.com)" class="regular-text">
           <button id="add-suspicious" class="button">Add</button>
         </div>
+      </div>
+    </div>
+
+    <div class="spam-detective-card">
+      <h2>Detection Methods <span class="version-badge">v1.4.0</span></h2>
+
+      <div class="settings-section">
+        <h3>Basic Detection</h3>
+        <p class="description">Core detection methods (always enabled)</p>
+        <ul class="detection-list">
+          <li><span class="status-enabled">●</span> Username pattern analysis</li>
+          <li><span class="status-enabled">●</span> Email pattern analysis</li>
+          <li><span class="status-enabled">●</span> Display name analysis</li>
+          <li><span class="status-enabled">●</span> Bulk registration detection</li>
+          <li><span class="status-enabled">●</span> Registration burst detection</li>
+          <li><span class="status-enabled">●</span> User activity analysis</li>
+        </ul>
+      </div>
+
+      <div class="settings-section">
+        <h3>Advanced Detection</h3>
+        <p class="description">Additional detection methods for better accuracy</p>
+
+        <label class="detection-toggle">
+          <input type="checkbox" id="enable-disposable" <?php checked(!empty($settings['enable_disposable_check'])); ?>>
+          <strong>Disposable Email Detection</strong>
+          <span class="detection-info"><?php echo class_exists('SpamDetective_DisposableEmailChecker') ? '(' . SpamDetective_DisposableEmailChecker::get_domain_count() . ' known providers)' : ''; ?></span>
+        </label>
+
+        <label class="detection-toggle">
+          <input type="checkbox" id="enable-entropy" <?php checked(!empty($settings['enable_entropy_check'])); ?>>
+          <strong>Username Entropy Analysis</strong>
+          <span class="detection-info">(Detects random/bot-generated names)</span>
+        </label>
+
+        <label class="detection-toggle">
+          <input type="checkbox" id="enable-homoglyph" <?php checked(!empty($settings['enable_homoglyph_check'])); ?>>
+          <strong>Unicode Homoglyph Detection</strong>
+          <span class="detection-info">(Detects spoofing attempts)</span>
+        </label>
+
+        <label class="detection-toggle">
+          <input type="checkbox" id="enable-similarity" <?php checked(!empty($settings['enable_similarity_check'])); ?>>
+          <strong>Username Similarity Check</strong>
+          <span class="detection-info">(Finds username clusters - resource intensive)</span>
+        </label>
+
+        <label class="detection-toggle">
+          <input type="checkbox" id="track-registration-ip" <?php checked(!empty($settings['track_registration_ip'])); ?>>
+          <strong>Track Registration IP</strong>
+          <span class="detection-info">(Enables IP velocity detection)</span>
+        </label>
+      </div>
+
+      <div class="settings-section">
+        <h3>External API Checks</h3>
+        <p class="description">These checks query external services (requires internet connection)</p>
+
+        <label class="detection-toggle">
+          <input type="checkbox" id="enable-external" <?php checked(!empty($settings['enable_external_checks'])); ?>>
+          <strong>Enable External Checks</strong>
+          <span class="detection-info">(Master toggle for all external APIs)</span>
+        </label>
+
+        <div class="external-checks-options" <?php echo empty($settings['enable_external_checks']) ? 'style="opacity:0.5;pointer-events:none;"' : ''; ?>>
+          <label class="detection-toggle sub-toggle">
+            <input type="checkbox" id="enable-stopforumspam" <?php checked(!empty($settings['enable_stopforumspam'])); ?>>
+            <strong>StopForumSpam API</strong>
+            <span class="detection-info">(Free spam database lookup)</span>
+          </label>
+
+          <label class="detection-toggle sub-toggle">
+            <input type="checkbox" id="enable-mx-check" <?php checked(!empty($settings['enable_mx_check'])); ?>>
+            <strong>Email MX Record Validation</strong>
+            <span class="detection-info">(Checks if email domain is valid)</span>
+          </label>
+
+          <label class="detection-toggle sub-toggle">
+            <input type="checkbox" id="enable-gravatar" <?php checked(!empty($settings['enable_gravatar_check'])); ?>>
+            <strong>Gravatar Check</strong>
+            <span class="detection-info">(Having a Gravatar reduces risk score)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button id="save-detection-settings" class="button button-primary">Save Detection Settings</button>
+        <span id="settings-saved-notice" class="notice-inline" style="display:none;">Settings saved!</span>
       </div>
     </div>
   <?php

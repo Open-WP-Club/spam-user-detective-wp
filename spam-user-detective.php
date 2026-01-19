@@ -4,12 +4,12 @@
  * Plugin Name: Spam User Detective
  * Plugin URI: https://github.com/Open-WP-Club/Spam-User-Detective
  * Description: Advanced spam and bot user detection for WordPress/WooCommerce with role protection, caching, and export features
- * Version: 1.3.0
+ * Version: 1.4.0
  * Author: Open WP Club
  * Author URI: https://github.com/Open-WP-Club
  * Text Domain: spam-user-detective
  * Requires at least: 5.0
- * Tested up to: 6.4
+ * Tested up to: 6.9
  * Requires PHP: 7.4
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('SPAM_DETECTIVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPAM_DETECTIVE_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('SPAM_DETECTIVE_VERSION', '1.3.0');
+define('SPAM_DETECTIVE_VERSION', '1.4.0');
 define('SPAM_DETECTIVE_MIN_PHP', '7.4');
 define('SPAM_DETECTIVE_MIN_WP', '5.0');
 
@@ -109,17 +109,37 @@ class SpamUserDetective
   public function init_default_settings()
   {
     // Initialize settings
-    if (false === get_option('spam_detective_settings')) {
-      $default_settings = [
-        'cache_duration' => 24, // hours
-        'batch_size' => 100,
-        'risk_threshold_high' => 70,
-        'risk_threshold_medium' => 40,
-        'risk_threshold_low' => 25,
-        'protect_users_with_orders' => true,
-        'enable_caching' => true
-      ];
+    $existing_settings = get_option('spam_detective_settings', false);
+
+    $default_settings = [
+      'cache_duration' => 24, // hours
+      'batch_size' => 100,
+      'risk_threshold_high' => 70,
+      'risk_threshold_medium' => 40,
+      'risk_threshold_low' => 25,
+      'protect_users_with_orders' => true,
+      'enable_caching' => true,
+      // NEW v1.4.0: External API checks
+      'enable_external_checks' => false, // Disabled by default (requires user opt-in)
+      'enable_stopforumspam' => false,
+      'enable_mx_check' => true,
+      'enable_gravatar_check' => true,
+      // NEW v1.4.0: Advanced analysis options
+      'enable_similarity_check' => false, // Can be resource intensive
+      'track_registration_ip' => true,
+      'enable_entropy_check' => true,
+      'enable_homoglyph_check' => true,
+      'enable_disposable_check' => true,
+    ];
+
+    if ($existing_settings === false) {
       add_option('spam_detective_settings', $default_settings);
+    } else {
+      // Merge new settings with existing (preserve user settings, add new defaults)
+      $merged_settings = array_merge($default_settings, $existing_settings);
+      if ($merged_settings !== $existing_settings) {
+        update_option('spam_detective_settings', $merged_settings);
+      }
     }
   }
 
@@ -141,7 +161,6 @@ class SpamUserDetective
     // Enqueue WordPress media scripts for file handling
     wp_enqueue_media();
 
-    wp_enqueue_script('jquery');
     wp_enqueue_style(
       'spam-detective-css',
       SPAM_DETECTIVE_PLUGIN_URL . 'assets/style.css',
@@ -151,7 +170,7 @@ class SpamUserDetective
     wp_enqueue_script(
       'spam-detective-js',
       SPAM_DETECTIVE_PLUGIN_URL . 'assets/script.js',
-      ['jquery'],
+      [], // No jQuery dependency - using vanilla JS
       SPAM_DETECTIVE_VERSION,
       true
     );

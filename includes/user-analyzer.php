@@ -23,6 +23,7 @@ class SpamDetective_UserAnalyzer
 
   /**
    * Analyze a user for spam indicators
+   * Enhanced in v1.4.0 with advanced detection methods
    */
   public function analyze_user($user, $whitelist = [], $suspicious_domains = [])
   {
@@ -36,7 +37,7 @@ class SpamDetective_UserAnalyzer
     // Skip whitelisted domains (case-insensitive comparison)
     $whitelist_lower = array_map('strtolower', $whitelist);
     if (in_array($email_domain, $whitelist_lower)) {
-      return ['is_suspicious' => false, 'risk_level' => 'low', 'reasons' => []];
+      return ['is_suspicious' => false, 'risk_level' => 'low', 'reasons' => [], 'score' => 0];
     }
 
     // Check suspicious domains (case-insensitive comparison)
@@ -46,6 +47,7 @@ class SpamDetective_UserAnalyzer
       $risk_score += 50;
     }
 
+    // Original analysis methods
     $risk_score += $this->analyze_username_patterns($user->user_login, $reasons);
     $risk_score += $this->analyze_display_name($user, $reasons);
     $risk_score += $this->analyze_email_patterns($user->user_email, $reasons);
@@ -55,13 +57,41 @@ class SpamDetective_UserAnalyzer
     $risk_score += $this->analyze_registration_burst($user->user_registered, $reasons);
     $risk_score += $this->analyze_user_activity($user, $reasons);
 
+    // NEW v1.4.0: Disposable email check
+    if (class_exists('SpamDetective_DisposableEmailChecker')) {
+      if (SpamDetective_DisposableEmailChecker::is_disposable($user->user_email)) {
+        $reasons[] = 'Disposable/temporary email address';
+        $risk_score += 40;
+      }
+    }
+
+    // NEW v1.4.0: Advanced analysis (entropy, homoglyphs, TLDs, etc.)
+    if (class_exists('SpamDetective_AdvancedAnalysis')) {
+      $advanced = SpamDetective_AdvancedAnalysis::run_all_analysis($user);
+      $risk_score += $advanced['total_score'];
+      $reasons = array_merge($reasons, $advanced['reasons']);
+    }
+
+    // NEW v1.4.0: External checks (StopForumSpam, MX, Gravatar)
+    if (class_exists('SpamDetective_ExternalChecks')) {
+      $settings = get_option('spam_detective_settings', []);
+
+      // Only run external checks if enabled
+      if (!empty($settings['enable_external_checks'])) {
+        $registration_ip = get_user_meta($user->ID, 'spam_detective_registration_ip', true);
+        $external = SpamDetective_ExternalChecks::run_all_checks($user, $registration_ip);
+        $risk_score += $external['total_score'];
+        $reasons = array_merge($reasons, $external['reasons']);
+      }
+    }
+
     // Determine risk level
     $risk_level = $this->determine_risk_level($risk_score);
 
     return [
       'is_suspicious' => $risk_score >= 25,
       'risk_level' => $risk_level,
-      'reasons' => $reasons,
+      'reasons' => array_unique($reasons),
       'score' => $risk_score
     ];
   }
