@@ -4,7 +4,7 @@
  * Plugin Name: Spam User Detective
  * Plugin URI: https://github.com/Open-WP-Club/Spam-User-Detective
  * Description: Advanced spam and bot user detection for WordPress/WooCommerce with role protection, caching, and export features
- * Version: 1.4.0
+ * Version: 1.5.0
  * Author: Open WP Club
  * Author URI: https://github.com/Open-WP-Club
  * Text Domain: spam-user-detective
@@ -24,13 +24,14 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('SPAM_DETECTIVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPAM_DETECTIVE_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('SPAM_DETECTIVE_VERSION', '1.4.0');
+define('SPAM_DETECTIVE_VERSION', '1.5.0');
 define('SPAM_DETECTIVE_MIN_PHP', '7.4');
 define('SPAM_DETECTIVE_MIN_WP', '5.0');
 
 // Include required files
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/load-components.php';
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/admin-interface.php';
+require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/settings-page.php';
 
 class SpamUserDetective
 {
@@ -154,9 +155,22 @@ class SpamUserDetective
     );
   }
 
+  public function settings_page()
+  {
+    if (!current_user_can('manage_options')) {
+      wp_die(__('You do not have sufficient permissions to access this page.', 'spam-user-detective'));
+    }
+
+    $settings_page = new SpamDetective_SettingsPage();
+    $settings_page->display_page();
+  }
+
   public function enqueue_scripts($hook)
   {
-    if ($hook !== 'users_page_spam-user-detective') return;
+    // Load only on main Spam Detective page
+    if ($hook !== 'users_page_spam-user-detective') {
+      return;
+    }
 
     // Enqueue WordPress media scripts for file handling
     wp_enqueue_media();

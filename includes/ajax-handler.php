@@ -460,6 +460,17 @@ class SpamDetective_AjaxHandler
       'enable_gravatar_check' => !empty($_POST['enable_gravatar']),
     ];
 
+    // Update threshold settings if provided
+    if (isset($_POST['risk_threshold_high'])) {
+      $detection_settings['risk_threshold_high'] = intval($_POST['risk_threshold_high']);
+    }
+    if (isset($_POST['risk_threshold_medium'])) {
+      $detection_settings['risk_threshold_medium'] = intval($_POST['risk_threshold_medium']);
+    }
+    if (isset($_POST['risk_threshold_low'])) {
+      $detection_settings['risk_threshold_low'] = intval($_POST['risk_threshold_low']);
+    }
+
     $updated_settings = array_merge($current_settings, $detection_settings);
     update_option('spam_detective_settings', $updated_settings);
 

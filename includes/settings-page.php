@@ -1,57 +1,25 @@
 <?php
 
 /**
- * Admin Interface Class
- * 
- * File: includes/admin-interface.php
+ * Settings Page Class
+ *
+ * File: includes/settings-page.php
  */
 
 if (!defined('ABSPATH')) {
   exit;
 }
 
-class SpamDetective_AdminInterface
+class SpamDetective_SettingsPage
 {
-
   public function display_page()
   {
-    $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'analysis';
-?>
-    <div class="wrap spam-detective-wrap">
-      <div class="spam-detective-header">
-        <h1 class="spam-detective-title">Spam User Detective</h1>
-      </div>
-      <p class="spam-detective-description">Detect and manage suspicious user accounts based on patterns commonly used by bots and spammers.</p>
-
-      <nav class="nav-tab-wrapper">
-        <a href="<?php echo esc_url(admin_url('users.php?page=spam-user-detective&tab=analysis')); ?>"
-           class="nav-tab <?php echo $active_tab === 'analysis' ? 'nav-tab-active' : ''; ?>">
-          Analysis
-        </a>
-        <a href="<?php echo esc_url(admin_url('users.php?page=spam-user-detective&tab=settings')); ?>"
-           class="nav-tab <?php echo $active_tab === 'settings' ? 'nav-tab-active' : ''; ?>">
-          Settings
-        </a>
-      </nav>
-
-      <?php if ($active_tab === 'analysis'): ?>
-        <?php $this->display_backup_warning(); ?>
-        <div class="spam-detective-content-full">
-          <?php $this->display_analysis_controls(); ?>
-          <?php $this->display_results_container(); ?>
-        </div>
-      <?php else: ?>
-        <?php $this->display_settings_tab(); ?>
-      <?php endif; ?>
-    </div>
-  <?php
-  }
-
-  private function display_settings_tab()
-  {
     $settings = get_option('spam_detective_settings', []);
-  ?>
-    <div class="spam-detective-settings-tab">
+?>
+    <div class="wrap spam-detective-settings">
+      <h1>Spam User Detective - Settings</h1>
+      <p class="description">Configure detection methods, manage domain lists, and import/export settings.</p>
+
       <div class="settings-layout">
         <div class="settings-main">
 
@@ -257,176 +225,6 @@ class SpamDetective_AdminInterface
         </div>
       </div>
     </div>
-  <?php
+<?php
   }
-
-  private function display_backup_warning()
-  {
-  ?>
-    <div class="notice notice-warning backup-warning">
-      <p>
-        <strong>Important:</strong> Please create a full backup of your website before using this tool.
-        While we use multiple checks to identify spam accounts, false positives are always possible.
-        Having a backup ensures you can restore legitimate users if they are accidentally removed.
-      </p>
-      <?php if (class_exists('WooCommerce')): ?>
-        <p>
-          <strong>WooCommerce Notice:</strong> Users with orders will be flagged but protected from deletion by default.
-          Use "Force Delete" option with extreme caution.
-        </p>
-      <?php endif; ?>
-    </div>
-  <?php
-  }
-
-  private function display_analysis_controls()
-  {
-  ?>
-    <div class="spam-detective-card">
-      <h2>Analysis Controls</h2>
-      <div class="analysis-buttons">
-        <button id="analyze-users" class="button button-primary">Analyze All Users</button>
-        <button id="quick-scan" class="button button-secondary">Quick Scan (Last 100)</button>
-        <button id="clear-cache" class="button button-secondary">Clear Analysis Cache</button>
-      </div>
-      <div id="analysis-progress" class="analysis-progress" style="display:none;">
-        <p>Analyzing users...</p>
-        <div class="progress-bar">
-          <div class="progress-fill"></div>
-        </div>
-      </div>
-    </div>
-  <?php
-  }
-
-  private function display_results_container()
-  {
-  ?>
-    <div id="results-container" class="spam-detective-card" style="display:none;">
-      <h2>Suspicious Users Found</h2>
-
-      <div class="analysis-summary">
-        <div class="summary-stat">
-          <span class="stat-number" id="total-suspicious">0</span>
-          <span class="stat-label">Suspicious Users</span>
-        </div>
-        <div class="summary-stat">
-          <span class="stat-number" id="high-confidence">0</span>
-          <span class="stat-label">High Confidence</span>
-        </div>
-        <div class="summary-stat">
-          <span class="stat-number" id="suspicious-domains">0</span>
-          <span class="stat-label">Bad Domains</span>
-        </div>
-        <div class="summary-stat">
-          <span class="stat-number" id="protected-users">0</span>
-          <span class="stat-label">Protected Users</span>
-        </div>
-      </div>
-
-      <div class="filter-section">
-        <h3>Filter by Risk Factor</h3>
-        <div class="filter-controls">
-          <select id="risk-factor-filter" class="filter-select">
-            <option value="">All Risk Factors</option>
-            <optgroup label="High Priority">
-              <option value="Known spam domain">Known spam domain</option>
-              <option value="No display name">No display name</option>
-              <option value="Disposable/temporary email">Disposable email</option>
-              <option value="StopForumSpam">StopForumSpam flagged</option>
-              <option value="Invalid email domain">Invalid email domain (no MX)</option>
-              <option value="Unicode homoglyphs">Unicode homoglyphs</option>
-              <option value="registration velocity">High IP velocity</option>
-              <option value="Mass registration burst">Mass registration burst</option>
-              <option value="Bulk registration">Bulk registration</option>
-            </optgroup>
-            <optgroup label="Username Patterns">
-              <option value="Suspicious username pattern">Suspicious username pattern</option>
-              <option value="Random username">Random username</option>
-              <option value="High entropy">High entropy username</option>
-              <option value="Sequential username">Sequential username</option>
-              <option value="Keyboard pattern">Keyboard pattern</option>
-              <option value="username cluster">Username cluster</option>
-            </optgroup>
-            <optgroup label="Email Patterns">
-              <option value="Generic email pattern">Generic email pattern</option>
-              <option value="Email with trailing numbers">Email with trailing numbers</option>
-              <option value="Suspicious domain extension">Suspicious domain extension</option>
-              <option value="Suspicious TLD">Suspicious TLD</option>
-              <option value="Very short email">Very short email prefix</option>
-              <option value="Numeric email">Numeric email prefix</option>
-            </optgroup>
-            <optgroup label="Profile Issues">
-              <option value="Fake name">Fake name used</option>
-              <option value="Numeric name">Numeric name fields</option>
-              <option value="Single character name">Single character name</option>
-              <option value="Generic display name">Generic display name</option>
-              <option value="No Gravatar">No Gravatar</option>
-            </optgroup>
-            <optgroup label="Activity">
-              <option value="No activity">No activity after 30 days</option>
-            </optgroup>
-          </select>
-          <select id="risk-level-filter" class="filter-select">
-            <option value="">All Risk Levels</option>
-            <option value="high">High Risk Only</option>
-            <option value="medium">Medium Risk Only</option>
-            <option value="low">Low Risk Only</option>
-          </select>
-          <button id="clear-filters" class="button">Clear Filters</button>
-          <span id="filter-count" class="filter-count"></span>
-        </div>
-      </div>
-
-      <div class="bulk-actions">
-        <div class="bulk-select-actions">
-          <button id="select-all-high" class="button">Select All High Confidence</button>
-          <button id="select-all-deletable" class="button">Select All Deletable</button>
-          <button id="select-all-suspicious" class="button">Select All Suspicious</button>
-        </div>
-
-        <div class="bulk-main-actions">
-          <button id="delete-selected" class="button button-primary delete-button">Delete Selected</button>
-          <label class="force-delete-option">
-            <input type="checkbox" id="force-delete-checkbox"> Force delete users with orders
-          </label>
-          <span id="selected-count" class="selected-count">0 selected</span>
-        </div>
-
-        <div class="bulk-export-actions">
-          <button id="export-selected" class="button">Export Selected (CSV)</button>
-          <button id="export-all" class="button">Export All Results (CSV)</button>
-        </div>
-      </div>
-
-      <div class="tablenav">
-        <div class="tablenav-pages">
-          <span class="displaying-num" id="displaying-num">0 items</span>
-        </div>
-      </div>
-
-      <table class="wp-list-table widefat fixed striped users">
-        <thead>
-          <tr>
-            <th class="manage-column column-cb check-column">
-              <input type="checkbox" id="select-all-checkbox">
-            </th>
-            <th>Status</th>
-            <th>Risk Level</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Display Name</th>
-            <th>Registration Date</th>
-            <th>Risk Factors</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="suspicious-users-list">
-          <!-- Results will be populated here -->
-        </tbody>
-      </table>
-    </div>
-  <?php
-  }
-
 }

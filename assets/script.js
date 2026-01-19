@@ -9,7 +9,12 @@
   'use strict';
 
   let suspiciousUsers = [];
+  let filteredUsers = [];
   let selectedUsers = [];
+  let currentFilters = {
+    riskFactor: '',
+    riskLevel: ''
+  };
 
   // =============================================
   // Utility Functions
@@ -126,7 +131,9 @@
 
   function initDetectionSettings() {
     const enableExternal = $('#enable-external');
-    const externalOptions = $('.external-checks-options');
+
+    // Handle external checks toggle (works on both old and new structure)
+    const externalOptions = $('.external-checks-options') || $('.sub-toggles');
 
     if (enableExternal && externalOptions) {
       enableExternal.addEventListener('change', function() {
@@ -153,29 +160,43 @@
     button.disabled = true;
     button.textContent = 'Saving...';
 
+    // Build data object
+    const data = {
+      action: 'save_detection_settings',
+      nonce: spamDetective.nonce,
+      enable_disposable: $('#enable-disposable')?.checked ? '1' : '',
+      enable_entropy: $('#enable-entropy')?.checked ? '1' : '',
+      enable_homoglyph: $('#enable-homoglyph')?.checked ? '1' : '',
+      enable_similarity: $('#enable-similarity')?.checked ? '1' : '',
+      track_registration_ip: $('#track-registration-ip')?.checked ? '1' : '',
+      enable_external: $('#enable-external')?.checked ? '1' : '',
+      enable_stopforumspam: $('#enable-stopforumspam')?.checked ? '1' : '',
+      enable_mx_check: $('#enable-mx-check')?.checked ? '1' : '',
+      enable_gravatar: $('#enable-gravatar')?.checked ? '1' : ''
+    };
+
+    // Add threshold values if they exist (settings page)
+    const thresholdHigh = $('#threshold-high');
+    const thresholdMedium = $('#threshold-medium');
+    const thresholdLow = $('#threshold-low');
+
+    if (thresholdHigh) data.risk_threshold_high = thresholdHigh.value;
+    if (thresholdMedium) data.risk_threshold_medium = thresholdMedium.value;
+    if (thresholdLow) data.risk_threshold_low = thresholdLow.value;
+
     ajax({
       url: spamDetective.ajaxUrl,
-      data: {
-        action: 'save_detection_settings',
-        nonce: spamDetective.nonce,
-        enable_disposable: $('#enable-disposable')?.checked ? '1' : '',
-        enable_entropy: $('#enable-entropy')?.checked ? '1' : '',
-        enable_homoglyph: $('#enable-homoglyph')?.checked ? '1' : '',
-        enable_similarity: $('#enable-similarity')?.checked ? '1' : '',
-        track_registration_ip: $('#track-registration-ip')?.checked ? '1' : '',
-        enable_external: $('#enable-external')?.checked ? '1' : '',
-        enable_stopforumspam: $('#enable-stopforumspam')?.checked ? '1' : '',
-        enable_mx_check: $('#enable-mx-check')?.checked ? '1' : '',
-        enable_gravatar: $('#enable-gravatar')?.checked ? '1' : ''
-      },
+      data: data,
       success: function(response) {
         button.disabled = false;
-        button.textContent = 'Save Detection Settings';
+        button.textContent = 'Save Settings';
 
         if (response.success) {
-          notice.textContent = 'Settings saved! Cache cleared.';
-          fadeIn(notice);
-          setTimeout(() => fadeOut(notice), 3000);
+          if (notice) {
+            notice.textContent = 'Settings saved! Cache cleared.';
+            fadeIn(notice);
+            setTimeout(() => fadeOut(notice), 3000);
+          }
 
           if (suspiciousUsers.length > 0) {
             showTemporaryMessage('Detection settings changed. Run a new analysis to see updated results.', 'info');
@@ -186,7 +207,7 @@
       },
       error: function() {
         button.disabled = false;
-        button.textContent = 'Save Detection Settings';
+        button.textContent = 'Save Settings';
         alert('An error occurred while saving settings.');
       }
     });
@@ -251,7 +272,17 @@
         hide(progress);
         if (response.success) {
           suspiciousUsers = response.data.users;
+          filteredUsers = suspiciousUsers; // Initialize filtered users
+          currentFilters = { riskFactor: '', riskLevel: '' }; // Reset filters
+
+          // Reset filter dropdowns
+          const riskFactorFilter = $('#risk-factor-filter');
+          const riskLevelFilter = $('#risk-level-filter');
+          if (riskFactorFilter) riskFactorFilter.value = '';
+          if (riskLevelFilter) riskLevelFilter.value = '';
+
           displayResults();
+          updateFilterCount();
           show(resultsContainer);
         } else {
           alert('Error: ' + response.data);
@@ -277,6 +308,77 @@
         clearInterval(interval);
       }
     }, 200);
+  }
+
+  // =============================================
+  // Filtering
+  // =============================================
+
+  function initFiltering() {
+    const riskFactorFilter = $('#risk-factor-filter');
+    const riskLevelFilter = $('#risk-level-filter');
+    const clearFiltersBtn = $('#clear-filters');
+
+    if (riskFactorFilter) {
+      riskFactorFilter.addEventListener('change', function() {
+        currentFilters.riskFactor = this.value;
+        applyFilters();
+      });
+    }
+
+    if (riskLevelFilter) {
+      riskLevelFilter.addEventListener('change', function() {
+        currentFilters.riskLevel = this.value;
+        applyFilters();
+      });
+    }
+
+    if (clearFiltersBtn) {
+      clearFiltersBtn.addEventListener('click', function() {
+        currentFilters.riskFactor = '';
+        currentFilters.riskLevel = '';
+        if (riskFactorFilter) riskFactorFilter.value = '';
+        if (riskLevelFilter) riskLevelFilter.value = '';
+        applyFilters();
+      });
+    }
+  }
+
+  function applyFilters() {
+    filteredUsers = suspiciousUsers.filter(user => {
+      // Filter by risk level
+      if (currentFilters.riskLevel && user.risk_level !== currentFilters.riskLevel) {
+        return false;
+      }
+
+      // Filter by risk factor
+      if (currentFilters.riskFactor) {
+        const hasMatchingReason = user.reasons.some(reason =>
+          reason.toLowerCase().includes(currentFilters.riskFactor.toLowerCase())
+        );
+        if (!hasMatchingReason) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    displayResults();
+    updateFilterCount();
+  }
+
+  function updateFilterCount() {
+    const filterCount = $('#filter-count');
+    if (!filterCount) return;
+
+    if (currentFilters.riskFactor || currentFilters.riskLevel) {
+      filterCount.textContent = `Showing ${filteredUsers.length} of ${suspiciousUsers.length} users`;
+      filterCount.style.display = '';
+    } else {
+      filterCount.textContent = '';
+      filterCount.style.display = 'none';
+    }
   }
 
   // =============================================
@@ -343,6 +445,11 @@
   }
 
   function displayResults() {
+    // Use filtered users for display, but show total stats from all users
+    const usersToDisplay = filteredUsers.length > 0 || (currentFilters.riskFactor || currentFilters.riskLevel)
+      ? filteredUsers
+      : suspiciousUsers;
+
     const highConfidence = suspiciousUsers.filter(u => u.risk_level === 'high').length;
     const domains = new Set(suspiciousUsers.map(u => u.email.split('@')[1]));
     const protectedUsers = suspiciousUsers.filter(u => !u.can_delete).length;
@@ -357,10 +464,10 @@
     if (highConfidenceEl) highConfidenceEl.textContent = highConfidence;
     if (suspiciousDomainsEl) suspiciousDomainsEl.textContent = domains.size;
     if (protectedUsersEl) protectedUsersEl.textContent = protectedUsers;
-    if (displayingNum) displayingNum.textContent = suspiciousUsers.length + ' items';
+    if (displayingNum) displayingNum.textContent = usersToDisplay.length + ' items';
 
     let html = '';
-    suspiciousUsers.forEach(user => {
+    usersToDisplay.forEach(user => {
       const riskClass = 'risk-' + user.risk_level;
       const emailDomain = user.email.split('@')[1];
       const statusIcon = getStatusIcon(user);
@@ -440,7 +547,9 @@
     if (selectAllHigh) {
       selectAllHigh.addEventListener('click', function() {
         $$('.user-checkbox').forEach(cb => cb.checked = false);
-        suspiciousUsers.forEach(user => {
+        // Use filtered users if filters are active
+        const usersToSelect = (currentFilters.riskFactor || currentFilters.riskLevel) ? filteredUsers : suspiciousUsers;
+        usersToSelect.forEach(user => {
           if (user.risk_level === 'high' && user.can_delete) {
             const cb = $(`.user-checkbox[value="${user.id}"]`);
             if (cb) cb.checked = true;
@@ -454,7 +563,9 @@
     if (selectAllDeletable) {
       selectAllDeletable.addEventListener('click', function() {
         $$('.user-checkbox').forEach(cb => cb.checked = false);
-        suspiciousUsers.forEach(user => {
+        // Use filtered users if filters are active
+        const usersToSelect = (currentFilters.riskFactor || currentFilters.riskLevel) ? filteredUsers : suspiciousUsers;
+        usersToSelect.forEach(user => {
           if (user.can_delete && !user.has_orders) {
             const cb = $(`.user-checkbox[value="${user.id}"]`);
             if (cb) cb.checked = true;
@@ -467,6 +578,7 @@
     const selectAllSuspicious = $('#select-all-suspicious');
     if (selectAllSuspicious) {
       selectAllSuspicious.addEventListener('click', function() {
+        // Select only visible (filtered) checkboxes
         $$('.user-checkbox:not(:disabled)').forEach(cb => cb.checked = true);
         updateSelectedCount();
       });
@@ -892,7 +1004,8 @@
           const removedCount = response.data.removed_count || 0;
 
           suspiciousUsers = updatedUsers;
-          displayResults();
+          // Re-apply current filters to updated users
+          applyFilters();
 
           if (removedCount > 0) {
             showTemporaryMessage(`Re-analysis complete! ${removedCount} user(s) are no longer flagged as suspicious due to the domain change.`, 'success');
@@ -974,6 +1087,7 @@
   function init() {
     initDetectionSettings();
     initAnalysis();
+    initFiltering();
     initCheckboxHandling();
     initDeleteHandling();
     initExportHandling();
