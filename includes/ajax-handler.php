@@ -92,8 +92,8 @@ class SpamDetective_AjaxHandler
       }
 
       // Check if email domain is whitelisted - skip completely if it is
-      $email_domain = explode('@', $user->user_email)[1] ?? '';
-      if (in_array(strtolower($email_domain), array_map('strtolower', $whitelist))) {
+      $email_domain = SpamDetective_Utils::get_email_domain($user->user_email);
+      if (in_array($email_domain, $whitelist)) {
         $skipped_users['whitelisted']++;
         continue;
       }
@@ -120,11 +120,6 @@ class SpamDetective_AjaxHandler
 
     // Sort users by risk level (high -> medium -> low) and then by registration date (newest first)
     usort($suspicious_users, [$this, 'sort_users_by_risk_and_date']);
-
-    error_log("Spam Detective: Analysis complete - Found " . count($suspicious_users) . " suspicious users. Skipped: " .
-      "{$skipped_users['protected_roles']} protected roles, " .
-      "{$skipped_users['has_orders']} with orders, " .
-      "{$skipped_users['whitelisted']} whitelisted domains");
 
     wp_send_json_success([
       'users' => $suspicious_users,
@@ -170,8 +165,8 @@ class SpamDetective_AjaxHandler
       }
 
       // Check if email domain is whitelisted - skip completely if it is
-      $email_domain = explode('@', $user->user_email)[1] ?? '';
-      if (in_array(strtolower($email_domain), array_map('strtolower', $whitelist))) {
+      $email_domain = SpamDetective_Utils::get_email_domain($user->user_email);
+      if (in_array($email_domain, $whitelist)) {
         $removed_count++;
         continue;
       }
@@ -199,8 +194,6 @@ class SpamDetective_AjaxHandler
 
     // Sort users by risk level
     usort($still_suspicious, [$this, 'sort_users_by_risk_and_date']);
-
-    error_log("Spam Detective: Re-analyzed " . count($user_ids) . " users. " . count($still_suspicious) . " still suspicious, {$removed_count} removed from list.");
 
     wp_send_json_success([
       'users' => $still_suspicious,
@@ -478,8 +471,6 @@ class SpamDetective_AjaxHandler
     if ($this->cache_manager) {
       $this->cache_manager->clear_all_user_cache();
     }
-
-    error_log('Spam Detective: Detection settings updated - ' . json_encode($detection_settings));
 
     wp_send_json_success([
       'message' => 'Detection settings saved successfully',

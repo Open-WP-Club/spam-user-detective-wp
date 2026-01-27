@@ -14,25 +14,46 @@ class SpamDetective_DomainManager
 {
   private $cache_manager;
 
+  /**
+   * In-memory cache for domain lists (per-request)
+   */
+  private $whitelist_cache = null;
+  private $suspicious_cache = null;
+
   public function __construct($cache_manager = null)
   {
     $this->cache_manager = $cache_manager;
   }
 
   /**
-   * Get whitelist domains
+   * Get whitelist domains (cached per-request)
    */
   public function get_whitelist()
   {
-    return array_map('strtolower', get_option('spam_detective_whitelist', []));
+    if ($this->whitelist_cache === null) {
+      $this->whitelist_cache = array_map('strtolower', get_option('spam_detective_whitelist', []));
+    }
+    return $this->whitelist_cache;
   }
 
   /**
-   * Get suspicious domains
+   * Get suspicious domains (cached per-request)
    */
   public function get_suspicious_domains()
   {
-    return array_map('strtolower', get_option('spam_detective_suspicious_domains', []));
+    if ($this->suspicious_cache === null) {
+      $this->suspicious_cache = array_map('strtolower', get_option('spam_detective_suspicious_domains', []));
+    }
+    return $this->suspicious_cache;
+  }
+
+  /**
+   * Clear in-memory domain list caches
+   */
+  private function clear_domain_cache()
+  {
+    $this->whitelist_cache = null;
+    $this->suspicious_cache = null;
   }
 
   /**
@@ -47,12 +68,12 @@ class SpamDetective_DomainManager
       $whitelist[] = $domain;
       update_option('spam_detective_whitelist', $whitelist);
 
-      // Clear cache when whitelist changes
+      $this->clear_domain_cache();
+
       if ($this->cache_manager) {
         $this->cache_manager->clear_all_user_cache();
       }
 
-      error_log("Spam Detective: Added domain '{$domain}' to whitelist");
       return true;
     }
 
@@ -75,12 +96,12 @@ class SpamDetective_DomainManager
     if (count($whitelist) < $original_count) {
       update_option('spam_detective_whitelist', array_values($whitelist));
 
-      // Clear cache when whitelist changes
+      $this->clear_domain_cache();
+
       if ($this->cache_manager) {
         $this->cache_manager->clear_all_user_cache();
       }
 
-      error_log("Spam Detective: Removed domain '{$domain}' from whitelist");
       return true;
     }
 
@@ -99,12 +120,12 @@ class SpamDetective_DomainManager
       $suspicious_domains[] = $domain;
       update_option('spam_detective_suspicious_domains', $suspicious_domains);
 
-      // Clear cache when suspicious domains change
+      $this->clear_domain_cache();
+
       if ($this->cache_manager) {
         $this->cache_manager->clear_all_user_cache();
       }
 
-      error_log("Spam Detective: Added domain '{$domain}' to suspicious list");
       return true;
     }
 
@@ -127,12 +148,12 @@ class SpamDetective_DomainManager
     if (count($suspicious_domains) < $original_count) {
       update_option('spam_detective_suspicious_domains', array_values($suspicious_domains));
 
-      // Clear cache when suspicious domains change
+      $this->clear_domain_cache();
+
       if ($this->cache_manager) {
         $this->cache_manager->clear_all_user_cache();
       }
 
-      error_log("Spam Detective: Removed domain '{$domain}' from suspicious list");
       return true;
     }
 
@@ -208,12 +229,11 @@ class SpamDetective_DomainManager
       update_option('spam_detective_suspicious_domains', $new_suspicious);
     }
 
-    // Clear cache after import
+    $this->clear_domain_cache();
+
     if ($this->cache_manager) {
       $this->cache_manager->clear_all_user_cache();
     }
-
-    error_log("Spam Detective: Domain lists imported, cache cleared");
 
     return ['imported' => true, 'message' => 'Domain lists imported successfully'];
   }

@@ -64,8 +64,6 @@ class SpamDetective_CacheManager
       wp_cache_flush_group('spam_detective');
     }
 
-    error_log("Spam Detective: Cleared {$deleted} cache entries");
-
     // Return whether cache was actually cleared
     return $deleted > 0;
   }
@@ -113,10 +111,6 @@ class SpamDetective_CacheManager
        AND a.option_name LIKE '%spam_detective%'"
     );
 
-    if ($deleted > 0) {
-      error_log("Spam Detective: Cleaned up {$deleted} expired cache entries");
-    }
-
     return $deleted;
   }
 
@@ -133,8 +127,7 @@ class SpamDetective_CacheManager
    */
   public function is_caching_enabled()
   {
-    $settings = get_option('spam_detective_settings', []);
-    return isset($settings['enable_caching']) ? $settings['enable_caching'] : true;
+    return SpamDetective_Utils::get_settings('enable_caching', true);
   }
 
   /**
@@ -142,8 +135,7 @@ class SpamDetective_CacheManager
    */
   public function get_cache_duration()
   {
-    $settings = get_option('spam_detective_settings', []);
-    $hours = isset($settings['cache_duration']) ? (int) $settings['cache_duration'] : 24;
+    $hours = (int) SpamDetective_Utils::get_settings('cache_duration', 24);
     return $hours * HOUR_IN_SECONDS;
   }
 
@@ -170,7 +162,6 @@ class SpamDetective_CacheManager
       }
     }
 
-    error_log("Spam Detective: Warmed up cache for {$warmed_up} users");
     return $warmed_up;
   }
 }

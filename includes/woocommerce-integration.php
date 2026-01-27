@@ -13,6 +13,11 @@ if (!defined('ABSPATH')) {
 class SpamDetective_WooCommerceIntegration
 {
   /**
+   * Order statuses that indicate legitimate customer activity
+   */
+  const MEANINGFUL_ORDER_STATUSES = ['completed', 'processing', 'on-hold'];
+
+  /**
    * Check if WooCommerce is active
    */
   public function is_woocommerce_active()
@@ -37,24 +42,17 @@ class SpamDetective_WooCommerceIntegration
       return $cached_result;
     }
 
-    // Check for orders that indicate legitimate customer activity
-    $meaningful_statuses = ['completed', 'processing', 'on-hold'];
-
     $orders = wc_get_orders([
       'customer_id' => $user_id,
       'limit' => 1,
-      'status' => $meaningful_statuses,
-      'return' => 'ids' // Only return IDs for performance
+      'status' => self::MEANINGFUL_ORDER_STATUSES,
+      'return' => 'ids'
     ]);
 
     $has_orders = !empty($orders);
 
     // Cache result for 1 hour
     set_transient($cache_key, $has_orders, HOUR_IN_SECONDS);
-
-    if ($has_orders) {
-      error_log("Spam Detective: User {$user_id} has meaningful WooCommerce orders, excluding from spam analysis");
-    }
 
     return $has_orders;
   }
@@ -80,7 +78,7 @@ class SpamDetective_WooCommerceIntegration
     $orders = wc_get_orders([
       'customer_id' => $user_id,
       'limit' => 1,
-      'status' => ['completed', 'processing', 'on-hold'],
+      'status' => self::MEANINGFUL_ORDER_STATUSES,
       'return' => 'ids'
     ]);
 
@@ -98,7 +96,7 @@ class SpamDetective_WooCommerceIntegration
 
     $orders = wc_get_orders([
       'customer_id' => $user_id,
-      'status' => ['completed', 'processing', 'on-hold'],
+      'status' => self::MEANINGFUL_ORDER_STATUSES,
       'return' => 'ids'
     ]);
 
@@ -128,7 +126,7 @@ class SpamDetective_WooCommerceIntegration
       'limit' => 1,
       'orderby' => 'date',
       'order' => 'DESC',
-      'status' => ['completed', 'processing', 'on-hold']
+      'status' => self::MEANINGFUL_ORDER_STATUSES
     ]);
 
     if (!empty($orders)) {

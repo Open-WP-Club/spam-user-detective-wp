@@ -210,7 +210,7 @@ class SpamDetective_AdvancedAnalysis
       'reason' => null
     ];
 
-    $domain = strtolower(explode('@', $email)[1] ?? '');
+    $domain = SpamDetective_Utils::get_email_domain($email);
     if (empty($domain)) {
       return $result;
     }
@@ -308,8 +308,7 @@ class SpamDetective_AdvancedAnalysis
     }
 
     // Check if we're storing registration IPs
-    $settings = get_option('spam_detective_settings', []);
-    if (empty($settings['track_registration_ip'])) {
+    if (!SpamDetective_Utils::is_feature_enabled('track_registration_ip')) {
       return $result;
     }
 
@@ -348,8 +347,7 @@ class SpamDetective_AdvancedAnalysis
    */
   public static function store_registration_ip($user_id, $ip = null)
   {
-    $settings = get_option('spam_detective_settings', []);
-    if (empty($settings['track_registration_ip'])) {
+    if (!SpamDetective_Utils::is_feature_enabled('track_registration_ip')) {
       return;
     }
 
@@ -483,8 +481,7 @@ class SpamDetective_AdvancedAnalysis
     }
 
     // Similar usernames (can be resource intensive)
-    $settings = get_option('spam_detective_settings', []);
-    if (!empty($settings['enable_similarity_check'])) {
+    if (SpamDetective_Utils::is_feature_enabled('enable_similarity_check')) {
       $similar = self::find_similar_usernames($user->user_login);
       $results['similar_usernames'] = $similar;
       if ($similar['score'] > 0) {

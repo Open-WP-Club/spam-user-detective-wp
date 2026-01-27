@@ -51,8 +51,7 @@ class SpamDetective_ExternalChecks
     ];
 
     // Check if external checks are enabled
-    $settings = get_option('spam_detective_settings', []);
-    if (empty($settings['enable_stopforumspam'])) {
+    if (!SpamDetective_Utils::is_feature_enabled('enable_stopforumspam')) {
       return $result;
     }
 
@@ -129,13 +128,12 @@ class SpamDetective_ExternalChecks
     ];
 
     // Check if MX checks are enabled
-    $settings = get_option('spam_detective_settings', []);
-    if (empty($settings['enable_mx_check'])) {
+    if (!SpamDetective_Utils::is_feature_enabled('enable_mx_check')) {
       return $result;
     }
 
     // Extract domain
-    $domain = strtolower(explode('@', $email)[1] ?? '');
+    $domain = SpamDetective_Utils::get_email_domain($email);
 
     if (empty($domain)) {
       return $result;
@@ -205,8 +203,7 @@ class SpamDetective_ExternalChecks
     ];
 
     // Check if Gravatar checks are enabled
-    $settings = get_option('spam_detective_settings', []);
-    if (empty($settings['enable_gravatar_check'])) {
+    if (!SpamDetective_Utils::is_feature_enabled('enable_gravatar_check')) {
       return $result;
     }
 
@@ -292,8 +289,7 @@ class SpamDetective_ExternalChecks
     ];
 
     // Check if external checks are enabled
-    $settings = get_option('spam_detective_settings', []);
-    if (empty($settings['enable_stopforumspam'])) {
+    if (!SpamDetective_Utils::is_feature_enabled('enable_stopforumspam')) {
       return $result;
     }
 

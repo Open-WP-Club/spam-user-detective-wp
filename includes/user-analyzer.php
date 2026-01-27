@@ -31,18 +31,16 @@ class SpamDetective_UserAnalyzer
     $reasons = [];
     $risk_score = 0;
 
-    $email_domain = strtolower(explode('@', $user->user_email)[1] ?? '');
-    $email_prefix = explode('@', $user->user_email)[0] ?? '';
+    $email_domain = SpamDetective_Utils::get_email_domain($user->user_email);
+    $email_prefix = SpamDetective_Utils::get_email_prefix($user->user_email);
 
-    // Skip whitelisted domains (case-insensitive comparison)
-    $whitelist_lower = array_map('strtolower', $whitelist);
-    if (in_array($email_domain, $whitelist_lower)) {
+    // Skip whitelisted domains (whitelist is already lowercase from DomainManager)
+    if (in_array($email_domain, $whitelist)) {
       return ['is_suspicious' => false, 'risk_level' => 'low', 'reasons' => [], 'score' => 0];
     }
 
-    // Check suspicious domains (case-insensitive comparison)
-    $suspicious_domains_lower = array_map('strtolower', $suspicious_domains);
-    if (in_array($email_domain, $suspicious_domains_lower)) {
+    // Check suspicious domains (already lowercase from DomainManager)
+    if (in_array($email_domain, $suspicious_domains)) {
       $reasons[] = 'Known spam domain';
       $risk_score += 50;
     }
@@ -74,10 +72,8 @@ class SpamDetective_UserAnalyzer
 
     // NEW v1.4.0: External checks (StopForumSpam, MX, Gravatar)
     if (class_exists('SpamDetective_ExternalChecks')) {
-      $settings = get_option('spam_detective_settings', []);
-
       // Only run external checks if enabled
-      if (!empty($settings['enable_external_checks'])) {
+      if (SpamDetective_Utils::is_feature_enabled('enable_external_checks')) {
         $registration_ip = get_user_meta($user->ID, 'spam_detective_registration_ip', true);
         $external = SpamDetective_ExternalChecks::run_all_checks($user, $registration_ip);
         $risk_score += $external['total_score'];
@@ -186,8 +182,8 @@ class SpamDetective_UserAnalyzer
   private function analyze_email_patterns($email, &$reasons)
   {
     $risk_score = 0;
-    $email_domain = strtolower(explode('@', $email)[1] ?? '');
-    $email_prefix = explode('@', $email)[0] ?? '';
+    $email_domain = SpamDetective_Utils::get_email_domain($email);
+    $email_prefix = SpamDetective_Utils::get_email_prefix($email);
 
     // Check for suspicious TLD domains
     $suspicious_tlds = ['.tk', '.ml', '.ga', '.cf', '.gq', '.pw', '.cc', '.ws'];

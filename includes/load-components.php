@@ -15,6 +15,9 @@ if (!defined('ABSPATH')) {
 
 // Load components in dependency order
 
+// 0. Load Utils (shared utilities, no dependencies)
+require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/utils.php';
+
 // 1. Load Cache Manager (no dependencies)
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/cache-manager.php';
 
@@ -48,7 +51,3 @@ require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/ajax-handler.php';
 // 11. Load main Analyzer class (orchestrates all components)
 require_once SPAM_DETECTIVE_PLUGIN_DIR . 'includes/spam-analyzer.php';
 
-// Log successful loading for debugging
-if (defined('WP_DEBUG') && WP_DEBUG) {
-  error_log('Spam Detective: All modular components loaded successfully');
-}

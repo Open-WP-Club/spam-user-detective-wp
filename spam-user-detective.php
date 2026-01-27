@@ -4,7 +4,7 @@
  * Plugin Name: Spam User Detective
  * Plugin URI: https://github.com/Open-WP-Club/Spam-User-Detective
  * Description: Advanced spam and bot user detection for WordPress/WooCommerce with role protection, caching, and export features
- * Version: 1.5.0
+ * Version: 1.5.5
  * Author: Open WP Club
  * Author URI: https://github.com/Open-WP-Club
  * Text Domain: spam-user-detective
@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('SPAM_DETECTIVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPAM_DETECTIVE_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('SPAM_DETECTIVE_VERSION', '1.5.0');
+define('SPAM_DETECTIVE_VERSION', '1.5.5');
 define('SPAM_DETECTIVE_MIN_PHP', '7.4');
 define('SPAM_DETECTIVE_MIN_WP', '5.0');
 
@@ -233,26 +233,14 @@ class SpamUserDetective
       wp_die('Insufficient permissions');
     }
 
-    global $wpdb;
-
-    // Clear all spam detective transients
-    $deleted = $wpdb->query(
-      "DELETE FROM {$wpdb->options} 
-       WHERE option_name LIKE '_transient_spam_detective_%' 
-       OR option_name LIKE '_transient_timeout_spam_detective_%'"
-    );
-
-    // Also clear any object cache if available
-    if (function_exists('wp_cache_flush_group')) {
-      wp_cache_flush_group('spam_detective');
-    }
-
-    // Log the cache clearing action
-    error_log("Spam Detective: Manual cache clear requested, cleared {$deleted} cache entries");
+    $cache_manager = new SpamDetective_CacheManager();
+    $cleared = $cache_manager->clear_all_user_cache();
 
     wp_send_json_success([
-      'message' => sprintf(__('Cleared %d cache entries.', 'spam-user-detective'), $deleted),
-      'deleted' => $deleted,
+      'message' => $cleared
+        ? __('Cache cleared successfully.', 'spam-user-detective')
+        : __('No cache entries to clear.', 'spam-user-detective'),
+      'deleted' => $cleared ? 1 : 0,
       'timestamp' => current_time('mysql')
     ]);
   }
@@ -289,12 +277,8 @@ class SpamUserDetective
   public function deactivate()
   {
     // Clear all caches on deactivation
-    global $wpdb;
-    $wpdb->query(
-      "DELETE FROM {$wpdb->options} 
-       WHERE option_name LIKE '_transient_spam_detective_%' 
-       OR option_name LIKE '_transient_timeout_spam_detective_%'"
-    );
+    $cache_manager = new SpamDetective_CacheManager();
+    $cache_manager->clear_all_user_cache();
 
     // Clear scheduled events
     wp_clear_scheduled_hook('spam_detective_cleanup_cache');

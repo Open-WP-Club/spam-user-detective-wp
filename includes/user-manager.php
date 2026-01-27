@@ -94,14 +94,12 @@ class SpamDetective_UserManager
       ) {
         $skipped++;
         $users_with_orders[] = $user->user_login;
-        error_log("Spam Detective: Skipping deletion of user {$user->user_login} (ID: {$user_id}) - has meaningful WooCommerce orders");
         continue;
       }
 
       if (wp_delete_user($user_id)) {
         $this->clear_user_cache($user_id);
         $deleted++;
-        error_log("Spam Detective: Deleted user {$user->user_login} (ID: {$user_id})");
       } else {
         $skipped++;
         error_log("Spam Detective: Failed to delete user {$user->user_login} (ID: {$user_id})");

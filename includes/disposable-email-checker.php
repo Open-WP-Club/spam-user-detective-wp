@@ -789,7 +789,7 @@ class SpamDetective_DisposableEmailChecker
   {
     // Extract domain from email if full email provided
     if (strpos($email, '@') !== false) {
-      $domain = strtolower(explode('@', $email)[1] ?? '');
+      $domain = SpamDetective_Utils::get_email_domain($email);
     } else {
       $domain = strtolower($email);
     }

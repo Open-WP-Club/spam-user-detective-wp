@@ -129,7 +129,9 @@ class SpamDetective_Analyzer
    */
   public function analyze_user($user, $whitelist = [], $suspicious_domains = [])
   {
-    error_log('SpamDetective_Analyzer::analyze_user() is deprecated. Use get_user_analyzer()->analyze_user() instead.');
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+      _doing_it_wrong(__METHOD__, 'Use get_user_analyzer()->analyze_user() instead.', '1.4.0');
+    }
     return $this->user_analyzer->analyze_user($user, $whitelist, $suspicious_domains);
   }
 
@@ -214,7 +216,6 @@ class SpamDetective_Analyzer
   {
     if ($this->cache_manager) {
       $this->cache_manager->clear_all_user_cache();
-      error_log("Spam Detective: Cleanup completed, all caches cleared");
     }
   }
 }
