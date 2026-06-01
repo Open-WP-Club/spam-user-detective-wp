@@ -101,7 +101,7 @@ class SpamDetective_ExportImport
    */
   public function import_domain_lists($file_data, $merge_mode = 'replace')
   {
-    if (!isset($file_data['tmp_name']) || !file_exists($file_data['tmp_name'])) {
+    if (!isset($file_data['tmp_name']) || !is_uploaded_file($file_data['tmp_name'])) {
       return ['success' => false, 'message' => 'No file uploaded or upload error'];
     }
 

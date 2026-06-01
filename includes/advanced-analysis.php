@@ -79,7 +79,6 @@ class SpamDetective_AdvancedAnalysis
     'ᴜ' => 'u',
     'ᴠ' => 'v',
     'ᴡ' => 'w',
-    'х' => 'x',
     'ʏ' => 'y',
     'ᴢ' => 'z',
     '０' => '0', // Fullwidth

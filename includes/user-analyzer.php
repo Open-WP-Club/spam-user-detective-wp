@@ -148,11 +148,16 @@ class SpamDetective_UserAnalyzer
   {
     $risk_score = 0;
 
-    // Check for missing display name
-    if (empty($user->display_name) || $user->display_name === $user->user_login) {
-      $reasons[] = 'No display name';
-      $risk_score += 70;
+    // Check for missing or default display name
+    if (empty($user->display_name)) {
+      $reasons[] = 'No display name set';
+      $risk_score += 20;
       return $risk_score;
+    }
+
+    if ($user->display_name === $user->user_login) {
+      $reasons[] = 'Display name matches username (default)';
+      $risk_score += 10;
     }
 
     $display_lower = strtolower($user->display_name);
@@ -254,9 +259,6 @@ class SpamDetective_UserAnalyzer
         $risk_score += 8;
         $reasons[] = 'Single character name';
       }
-    } else {
-      // Having complete name info is slightly positive
-      $risk_score -= 5; // Small bonus for providing names
     }
 
     return $risk_score;

@@ -135,7 +135,8 @@ class SpamDetective_AjaxHandler
   {
     $this->verify_nonce_and_capability('manage_options');
 
-    $user_ids = $_POST['user_ids'] ?? [];
+    $user_ids = array_map('intval', (array) ($_POST['user_ids'] ?? []));
+    $user_ids = array_filter($user_ids);
 
     if (empty($user_ids) || !$this->user_analyzer || !$this->user_manager) {
       wp_send_json_error('No users provided or required components not available');
@@ -209,7 +210,8 @@ class SpamDetective_AjaxHandler
   {
     $this->verify_nonce_and_capability('delete_users');
 
-    $user_ids = $_POST['user_ids'] ?? [];
+    $user_ids = array_map('intval', (array) ($_POST['user_ids'] ?? []));
+    $user_ids = array_filter($user_ids);
     $force_delete = isset($_POST['force_delete']) && $_POST['force_delete'];
 
     if (empty($user_ids) || !$this->user_manager) {
@@ -296,7 +298,8 @@ class SpamDetective_AjaxHandler
   {
     $this->verify_nonce_and_capability('manage_options');
 
-    $user_ids = $_POST['user_ids'] ?? [];
+    $user_ids = array_map('intval', (array) ($_POST['user_ids'] ?? []));
+    $user_ids = array_filter($user_ids);
 
     if (!$this->export_import) {
       wp_send_json_error('Export functionality not available');
@@ -333,7 +336,7 @@ class SpamDetective_AjaxHandler
   {
     $this->verify_nonce_and_capability('manage_options');
 
-    $merge_mode = $_POST['merge_mode'] ?? 'replace';
+    $merge_mode = in_array($_POST['merge_mode'] ?? '', ['merge', 'replace']) ? $_POST['merge_mode'] : 'replace';
 
     if (!isset($_FILES['import_file']) || !$this->export_import) {
       wp_send_json_error('No file uploaded or import functionality not available');

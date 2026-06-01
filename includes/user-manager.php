@@ -198,6 +198,7 @@ class SpamDetective_UserManager
       'display_name' => $user->display_name,
       'registered' => $user->user_registered,
       'risk_level' => $analysis['risk_level'],
+      'score' => $analysis['score'] ?? 0,
       'reasons' => $analysis['reasons'],
       'can_delete' => $this->can_delete_user($user),
       'has_orders' => $this->woocommerce_integration ? $this->woocommerce_integration->has_woocommerce_orders($user->ID) : false,

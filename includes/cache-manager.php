@@ -30,7 +30,7 @@ class SpamDetective_CacheManager
   public function set_user_analysis($user_id, $user_registered, $user_email, $analysis)
   {
     $cache_key = $this->get_user_cache_key($user_id, $user_registered, $user_email);
-    return set_transient($cache_key, $analysis, self::CACHE_DURATION);
+    return set_transient($cache_key, $analysis, $this->get_cache_duration());
   }
 
   /**

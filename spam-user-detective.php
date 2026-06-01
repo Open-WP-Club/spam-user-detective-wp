@@ -4,7 +4,7 @@
  * Plugin Name: Spam User Detective
  * Plugin URI: https://github.com/Open-WP-Club/Spam-User-Detective
  * Description: Advanced spam and bot user detection for WordPress/WooCommerce with role protection, caching, and export features
- * Version: 1.5.5
+ * Version: 1.5.6
  * Author: Open WP Club
  * Author URI: https://github.com/Open-WP-Club
  * Text Domain: spam-user-detective
@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('SPAM_DETECTIVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPAM_DETECTIVE_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('SPAM_DETECTIVE_VERSION', '1.5.5');
+define('SPAM_DETECTIVE_VERSION', '1.5.6');
 define('SPAM_DETECTIVE_MIN_PHP', '7.4');
 define('SPAM_DETECTIVE_MIN_WP', '5.0');
 
@@ -54,9 +54,6 @@ class SpamUserDetective
     add_action('init', [$this, 'init']);
     add_action('admin_menu', [$this, 'add_admin_menu']);
     add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts']);
-
-    // Cache management
-    add_action('wp_ajax_clear_spam_cache', [$this, 'ajax_clear_spam_cache']);
 
     // Plugin lifecycle
     register_activation_hook(__FILE__, [$this, 'activate']);
@@ -223,29 +220,6 @@ class SpamUserDetective
   }
 
   /**
-   * AJAX handler to clear spam detection cache
-   */
-  public function ajax_clear_spam_cache()
-  {
-    check_ajax_referer('spam_detective_nonce', 'nonce');
-
-    if (!current_user_can('manage_options')) {
-      wp_die('Insufficient permissions');
-    }
-
-    $cache_manager = new SpamDetective_CacheManager();
-    $cleared = $cache_manager->clear_all_user_cache();
-
-    wp_send_json_success([
-      'message' => $cleared
-        ? __('Cache cleared successfully.', 'spam-user-detective')
-        : __('No cache entries to clear.', 'spam-user-detective'),
-      'deleted' => $cleared ? 1 : 0,
-      'timestamp' => current_time('mysql')
-    ]);
-  }
-
-  /**
    * Plugin activation
    */
   public function activate()
@@ -263,7 +237,7 @@ class SpamUserDetective
     $this->init_default_settings();
 
     // Create activation timestamp
-    add_option('spam_detective_activated', current_time('timestamp'));
+    add_option('spam_detective_activated', time());
 
     // Schedule cleanup of old cache entries (optional)
     if (!wp_next_scheduled('spam_detective_cleanup_cache')) {
