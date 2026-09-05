@@ -11,6 +11,7 @@
   let suspiciousUsers = [];
   let filteredUsers = [];
   let selectedUsers = [];
+  let analysisInProgress = false;
   let currentFilters = {
     riskFactor: '',
     riskLevel: ''
@@ -251,63 +252,93 @@
   }
 
   function startAnalysis(isQuickScan) {
+    if (analysisInProgress) return;
+
     const progress = $('#analysis-progress');
     const progressFill = $('.progress-fill');
     const resultsContainer = $('#results-container');
+    const analyzeBtn = $('#analyze-users');
+    const quickScanBtn = $('#quick-scan');
 
+    analysisInProgress = true;
+    if (analyzeBtn) analyzeBtn.disabled = true;
+    if (quickScanBtn) quickScanBtn.disabled = true;
     show(progress);
     if (progressFill) progressFill.style.width = '0%';
     hide(resultsContainer);
+    suspiciousUsers = [];
 
-    animateProgress();
+    requestAnalysisBatch(isQuickScan, 0);
+  }
 
+  function requestAnalysisBatch(isQuickScan, offset) {
     ajax({
       url: spamDetective.ajaxUrl,
       data: {
         action: 'analyze_spam_users',
         quick_scan: isQuickScan ? '1' : '',
+        offset: offset,
         nonce: spamDetective.nonce
       },
       success: function(response) {
-        hide(progress);
         if (response.success) {
-          suspiciousUsers = response.data.users;
-          filteredUsers = suspiciousUsers; // Initialize filtered users
-          currentFilters = { riskFactor: '', riskLevel: '' }; // Reset filters
+          suspiciousUsers = suspiciousUsers.concat(response.data.users || []);
+          updateAnalysisProgress(response.data.next_offset, response.data.total_users);
 
-          // Reset filter dropdowns
-          const riskFactorFilter = $('#risk-factor-filter');
-          const riskLevelFilter = $('#risk-level-filter');
-          if (riskFactorFilter) riskFactorFilter.value = '';
-          if (riskLevelFilter) riskLevelFilter.value = '';
-
-          displayResults();
-          updateFilterCount();
-          show(resultsContainer);
+          if (response.data.has_more) {
+            requestAnalysisBatch(isQuickScan, response.data.next_offset);
+          } else {
+            finishAnalysis();
+          }
         } else {
+          resetAnalysisState();
           alert('Error: ' + response.data);
         }
       },
       error: function() {
-        hide(progress);
+        resetAnalysisState();
         alert('An error occurred during analysis. Please try again.');
       }
     });
   }
 
-  function animateProgress() {
+  function updateAnalysisProgress(processed, total) {
     const progressFill = $('.progress-fill');
     if (!progressFill) return;
 
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15;
-      if (progress > 90) progress = 90;
-      progressFill.style.width = progress + '%';
-      if (progress >= 90) {
-        clearInterval(interval);
-      }
-    }, 200);
+    const progress = total > 0 ? Math.min(100, (processed / total) * 100) : 100;
+    progressFill.style.width = progress + '%';
+  }
+
+  function finishAnalysis() {
+    suspiciousUsers.sort((a, b) => {
+      const priority = { high: 3, medium: 2, low: 1 };
+      const riskDifference = (priority[b.risk_level] || 0) - (priority[a.risk_level] || 0);
+      return riskDifference || String(b.registered).localeCompare(String(a.registered));
+    });
+
+    filteredUsers = suspiciousUsers;
+    currentFilters = { riskFactor: '', riskLevel: '' };
+
+    const riskFactorFilter = $('#risk-factor-filter');
+    const riskLevelFilter = $('#risk-level-filter');
+    if (riskFactorFilter) riskFactorFilter.value = '';
+    if (riskLevelFilter) riskLevelFilter.value = '';
+
+    displayResults();
+    updateFilterCount();
+    show($('#results-container'));
+    resetAnalysisState();
+  }
+
+  function resetAnalysisState() {
+    analysisInProgress = false;
+    hide($('#analysis-progress'));
+
+    const analyzeBtn = $('#analyze-users');
+    const quickScanBtn = $('#quick-scan');
+    if (analyzeBtn) analyzeBtn.disabled = false;
+    if (quickScanBtn) quickScanBtn.disabled = false;
   }
 
   // =============================================

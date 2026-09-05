@@ -61,13 +61,23 @@ class SpamDetective_AjaxHandler
   {
     $this->verify_nonce_and_capability('manage_options');
 
-    $quick_scan = isset($_POST['quick_scan']) && $_POST['quick_scan'];
+    $quick_scan = !empty($_POST['quick_scan']);
+    $offset = max(0, intval($_POST['offset'] ?? 0));
+    $configured_batch_size = (int) SpamDetective_Utils::get_settings('batch_size', 25);
+    $batch_size = max(1, min(25, $configured_batch_size));
+
+    // Network reputation checks can each wait for a remote service. Keep those
+    // batches smaller so a slow provider cannot exhaust the AJAX time limit.
+    if (SpamDetective_Utils::is_feature_enabled('enable_external_checks')) {
+      $batch_size = min(5, $batch_size);
+    }
 
     if (!$this->user_manager || !$this->user_analyzer) {
       wp_send_json_error('Required components not available');
     }
 
-    $users = $this->user_manager->get_users_for_analysis($quick_scan);
+    $total_users = $this->user_manager->get_analysis_user_count($quick_scan);
+    $users = $this->user_manager->get_users_for_analysis($quick_scan, $offset, $batch_size);
     $suspicious_users = [];
     $whitelist = $this->domain_manager ? $this->domain_manager->get_whitelist() : [];
     $suspicious_domains = $this->domain_manager ? $this->domain_manager->get_suspicious_domains() : [];
@@ -121,9 +131,15 @@ class SpamDetective_AjaxHandler
     // Sort users by risk level (high -> medium -> low) and then by registration date (newest first)
     usort($suspicious_users, [$this, 'sort_users_by_risk_and_date']);
 
+    $processed_count = count($users);
+    $next_offset = $offset + $processed_count;
+
     wp_send_json_success([
       'users' => $suspicious_users,
-      'total_analyzed' => count($users),
+      'total_analyzed' => $processed_count,
+      'total_users' => $total_users,
+      'next_offset' => $next_offset,
+      'has_more' => $processed_count > 0 && $next_offset < $total_users,
       'skipped' => $skipped_users
     ]);
   }

@@ -193,7 +193,7 @@ class SpamDetective_UserAnalyzer
     // Check for suspicious TLD domains
     $suspicious_tlds = ['.tk', '.ml', '.ga', '.cf', '.gq', '.pw', '.cc', '.ws'];
     foreach ($suspicious_tlds as $tld) {
-      if (str_ends_with($email_domain, $tld)) {
+      if (SpamDetective_Utils::string_ends_with($email_domain, $tld)) {
         $risk_score += 15;
         $reasons[] = 'Suspicious domain extension';
         break;

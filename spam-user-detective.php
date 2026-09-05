@@ -4,12 +4,12 @@
  * Plugin Name: Spam User Detective
  * Plugin URI: https://github.com/Open-WP-Club/Spam-User-Detective
  * Description: Advanced spam and bot user detection for WordPress/WooCommerce with role protection, caching, and export features
- * Version: 1.5.6
+ * Version: 1.5.7
  * Author: Open WP Club
  * Author URI: https://github.com/Open-WP-Club
  * Text Domain: spam-user-detective
  * Requires at least: 5.0
- * Tested up to: 6.9
+ * Tested up to: 7.1
  * Requires PHP: 7.4
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('SPAM_DETECTIVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPAM_DETECTIVE_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('SPAM_DETECTIVE_VERSION', '1.5.6');
+define('SPAM_DETECTIVE_VERSION', '1.5.7');
 define('SPAM_DETECTIVE_MIN_PHP', '7.4');
 define('SPAM_DETECTIVE_MIN_WP', '5.0');
 
@@ -111,7 +111,7 @@ class SpamUserDetective
 
     $default_settings = [
       'cache_duration' => 24, // hours
-      'batch_size' => 100,
+      'batch_size' => 25,
       'risk_threshold_high' => 70,
       'risk_threshold_medium' => 40,
       'risk_threshold_low' => 25,

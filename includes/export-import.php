@@ -219,7 +219,7 @@ class SpamDetective_ExportImport
       return ['valid' => false, 'message' => 'File not found'];
     }
 
-    if ($file_data['type'] !== 'text/csv' && !str_ends_with($file_data['name'], '.csv')) {
+    if ($file_data['type'] !== 'text/csv' && !SpamDetective_Utils::string_ends_with(strtolower($file_data['name']), '.csv')) {
       return ['valid' => false, 'message' => 'File must be CSV format'];
     }
 
@@ -239,7 +239,7 @@ class SpamDetective_ExportImport
       return ['valid' => false, 'message' => 'File not found'];
     }
 
-    if ($file_data['type'] !== 'application/json' && !str_ends_with($file_data['name'], '.json')) {
+    if ($file_data['type'] !== 'application/json' && !SpamDetective_Utils::string_ends_with(strtolower($file_data['name']), '.json')) {
       return ['valid' => false, 'message' => 'File must be JSON format'];
     }
 

@@ -156,15 +156,36 @@ class SpamDetective_UserManager
   /**
    * Get users for analysis
    */
-  public function get_users_for_analysis($quick_scan = false)
+  public function get_users_for_analysis($quick_scan = false, $offset = 0, $batch_size = 25)
   {
-    $limit = $quick_scan ? 100 : -1;
+    $offset = max(0, (int) $offset);
+    $batch_size = max(1, min(25, (int) $batch_size));
+
+    if ($quick_scan) {
+      $remaining = max(0, 100 - $offset);
+      if ($remaining === 0) {
+        return [];
+      }
+      $batch_size = min($batch_size, $remaining);
+    }
 
     return get_users([
-      'number' => $limit,
+      'number' => $batch_size,
+      'offset' => $offset,
       'orderby' => 'registered',
       'order' => 'DESC'
     ]);
+  }
+
+  /**
+   * Get the number of users included in an analysis run.
+   */
+  public function get_analysis_user_count($quick_scan = false)
+  {
+    $counts = count_users();
+    $total = isset($counts['total_users']) ? (int) $counts['total_users'] : 0;
+
+    return $quick_scan ? min(100, $total) : $total;
   }
 
   /**

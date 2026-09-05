@@ -805,7 +805,7 @@ class SpamDetective_DisposableEmailChecker
 
     // Check subdomain matches (e.g., anything.mailinator.com)
     foreach (self::$disposable_domains as $disposable_domain) {
-      if (str_ends_with($domain, '.' . $disposable_domain)) {
+      if (SpamDetective_Utils::string_ends_with($domain, '.' . $disposable_domain)) {
         return true;
       }
     }

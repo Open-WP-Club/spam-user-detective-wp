@@ -178,7 +178,9 @@ class SpamDetective_AdvancedAnalysis
     $found_homoglyphs = [];
 
     foreach (self::$homoglyphs as $homoglyph => $ascii) {
-      if (mb_strpos($username, $homoglyph) !== false) {
+      // strpos() is sufficient for an exact UTF-8 byte sequence and keeps the
+      // plugin working when the optional mbstring extension is unavailable.
+      if (strpos($username, $homoglyph) !== false) {
         $found_homoglyphs[] = $homoglyph;
         $converted = str_replace($homoglyph, $ascii, $converted);
       }

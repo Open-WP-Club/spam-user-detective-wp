@@ -19,6 +19,23 @@ class SpamDetective_Utils
   private static $settings_cache = null;
 
   /**
+   * PHP 7.4-compatible string suffix check.
+   *
+   * @param string $haystack String to search
+   * @param string $needle Expected suffix
+   * @return bool
+   */
+  public static function string_ends_with($haystack, $needle)
+  {
+    if ($needle === '') {
+      return true;
+    }
+
+    $needle_length = strlen($needle);
+    return $needle_length <= strlen($haystack) && substr($haystack, -$needle_length) === $needle;
+  }
+
+  /**
    * Extract domain from email address (lowercase)
    *
    * @param string $email Email address
