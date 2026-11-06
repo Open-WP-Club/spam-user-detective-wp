@@ -9,7 +9,7 @@
  * Author URI: https://github.com/Open-WP-Club
  * Text Domain: spam-user-detective
  * Requires at least: 5.0
- * Tested up to: 7.1
+ * Tested up to: 7.1.4
  * Requires PHP: 7.4
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
